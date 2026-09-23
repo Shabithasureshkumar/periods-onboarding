@@ -1,28 +1,51 @@
 import { Clock } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Dashboard } from "./components/Dashboard";
 import { OnboardingLayout, PrivacyPill } from "./components/OnboardingLayout";
 import { WelcomePage } from "./components/WelcomePage";
 import { clearProgress, loadProgress, type OnboardingProgress } from "./lib/progress";
 import { OnboardingFlow } from "./OnboardingFlow";
+import { api } from "./services/api";
 import type { OnboardingData, StepId } from "./types";
 
-type View =
+export type View =
   | { name: "welcome" }
   | { name: "onboarding"; data?: OnboardingData; step?: StepId; completed?: readonly StepId[] }
   | { name: "dashboard"; data: OnboardingData };
 
 export default function App() {
-  const [view, setView] = useState<View>({ name: "welcome" });
+  const [view, setView] = useState<View>(() => {
+    if (typeof window !== "undefined" && window.history.state?.name) {
+      return window.history.state as View;
+    }
+    return { name: "welcome" };
+  });
+
   // Read once on mount. The welcome page stays in control — nothing auto-jumps into the flow.
   const [progress, setProgress] = useState<OnboardingProgress | null>(() => loadProgress());
 
-  const open = useCallback((next: View) => {
+  const open = useCallback((next: View, pushHistory = true) => {
     setView(next);
+    if (pushHistory && typeof window !== "undefined") {
+      window.history.pushState(next, "");
+    }
     window.scrollTo({ top: 0 });
   }, []);
 
-  const startSetup = () => open({ name: "onboarding" });
+  // Listen for browser Back and Forward navigation
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      if (e.state && e.state.name) {
+        setView(e.state as View);
+      } else {
+        setView({ name: "welcome" });
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const startSetup = () => open({ name: "onboarding", step: 1 });
 
   const resumeSetup = () => {
     if (!progress) return startSetup();
@@ -32,8 +55,16 @@ export default function App() {
   const startOver = () => {
     clearProgress();
     setProgress(null);
-    open({ name: "onboarding" });
+    open({ name: "onboarding", step: 1 });
   };
+
+  const handleStepChange = useCallback((step: StepId, currentData: OnboardingData) => {
+    const nextView: View = { name: "onboarding", step, data: currentData };
+    setView(nextView);
+    if (typeof window !== "undefined") {
+      window.history.pushState(nextView, "");
+    }
+  }, []);
 
   if (view.name === "welcome") {
     return <WelcomePage onGetStarted={startSetup} progress={progress} onResume={resumeSetup} onStartOver={startOver} />;
@@ -62,12 +93,14 @@ export default function App() {
     >
       <OnboardingFlow
         // Remount when resuming so the flow starts from the provided data and step.
-        key={view.step ? `resume-${view.step}` : "new"}
+        key={view.step ? `step-${view.step}` : "new"}
         initialData={view.data}
         initialStep={view.step ?? 1}
         initialCompleted={view.completed}
-        onComplete={(data) => {
-          // Integration point: persist `data` to the Mednevo backend here.
+        onStepChange={handleStepChange}
+        onComplete={async (data) => {
+          // Persist data to Mednevo backend via enterprise API service layer
+          await api.submitOnboardingProfile(data);
           setProgress(null);
           open({ name: "dashboard", data });
         }}

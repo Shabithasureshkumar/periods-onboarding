@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { toISODate } from "../lib/health";
+import { todayISO } from "../lib/health";
 import { DatePicker } from "./DatePicker";
 import { primaryBtn, secondaryBtn } from "./NavigationButtons";
 import { cn } from "../lib/cn";
@@ -25,7 +25,7 @@ interface CalendarDialogProps {
  */
 export function CalendarDialog({ open, value, onSelect, onClose }: CalendarDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  const [draft, setDraft] = useState(() => value || toISODate(new Date()));
+  const [draft, setDraft] = useState(() => value || todayISO());
 
   // Re-sync whenever the dialog is (re)opened, so Cancel always reverts to what was saved. With no
   // date saved yet, the draft starts on today — the day the grid focuses — so "Select" is usable.
@@ -33,7 +33,7 @@ export function CalendarDialog({ open, value, onSelect, onClose }: CalendarDialo
   const [syncedFor, setSyncedFor] = useState({ open, value });
   if (syncedFor.open !== open || syncedFor.value !== value) {
     setSyncedFor({ open, value });
-    if (open) setDraft(value || toISODate(new Date()));
+    if (open) setDraft(value || todayISO());
   }
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function CalendarDialog({ open, value, onSelect, onClose }: CalendarDialo
           </h2>
           <button
             type="button"
-            onClick={() => commit(toISODate(new Date()))}
+            onClick={() => commit(todayISO())}
             className="min-h-11 shrink-0 rounded-lg px-3 text-body-sm font-semibold text-rose-ink transition-colors hover:bg-blush-100 focus-ring pointer-fine:min-h-9"
           >
             Today

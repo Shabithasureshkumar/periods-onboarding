@@ -67,9 +67,17 @@ interface OnboardingLayoutProps {
   mode?: "page" | "fixed";
   /** "ambient" — soft pink glows and rings; "plain" — clean white (welcome page). */
   background?: "ambient" | "plain";
+  /** Optional custom container classes (e.g. max-w-[1160px] mx-auto). */
+  containerClassName?: string;
 }
 
-export function OnboardingLayout({ children, headerRight = <PrivacyPill />, mode = "page", background = "ambient" }: OnboardingLayoutProps) {
+export function OnboardingLayout({
+  children,
+  headerRight = <PrivacyPill />,
+  mode = "page",
+  background = "ambient",
+  containerClassName,
+}: OnboardingLayoutProps) {
   const fixed = mode === "fixed";
   return (
     <div className={cn("relative isolate", fixed ? "h-dvh overflow-hidden" : "min-h-dvh")}>
@@ -80,8 +88,8 @@ export function OnboardingLayout({ children, headerRight = <PrivacyPill />, mode
       >
         Skip to content
       </a>
-      {/* Full viewport width — only responsive gutters, no centred max-width container. */}
-      <div className={cn("w-full px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16", fixed && "flex h-full flex-col")}>
+      {/* Container — max-width centered or responsive gutters */}
+      <div className={cn("w-full", containerClassName ?? "px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16", fixed && "flex h-full flex-col")}>
         <header className={cn("flex shrink-0 items-center justify-between gap-3", fixed ? "h-14 short:h-12" : "h-16 sm:h-20")}>
           <BrandMark />
           {headerRight}

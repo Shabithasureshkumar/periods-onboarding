@@ -223,7 +223,7 @@ export const EMPTY_TRACKING: FertilityTracking = {
   libido: false,
 };
 
-export const CYCLE_RANGE = { min: 15, max: 60, default: 28 } as const;
+export const CYCLE_RANGE = { min: 15, max: 365, default: 28, sliderMax: 120 } as const;
 export const DURATION_RANGE = { min: 1, max: 30, default: 5, manualMax: 90 } as const;
 export const HEIGHT_RANGE = { min: 100, max: 250 } as const;
 export const WEIGHT_RANGE = { min: 25, max: 300 } as const;

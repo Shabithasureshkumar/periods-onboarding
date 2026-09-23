@@ -1,6 +1,7 @@
-import { CalendarClock, CircleHelp, Shuffle } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarClock, CircleHelp, Shuffle } from "lucide-react";
+import { useState } from "react";
 import { FeedbackBadge } from "../components/FeedbackBadge";
-import { FieldError } from "../components/Fields";
+import { FieldError, NumberField } from "../components/Fields";
 import { InfoCard } from "../components/InfoCard";
 import { OptionCard, handleRadioKeys } from "../components/OptionCard";
 import { SliderInput } from "../components/SliderInput";
@@ -12,8 +13,12 @@ import type { StepProps } from "../types";
 const ICONS = { known: CalendarClock, unsure: CircleHelp, varies: Shuffle } as const;
 
 export function StepCycleLength({ data, update, errors }: StepProps) {
-  const length = data.cycleLength ?? CYCLE_RANGE.default;
-  const feedback = getCycleFeedback(length);
+  const [manual, setManual] = useState(() => (data.cycleLength !== undefined && data.cycleLength > 60));
+  const sliderValue = data.cycleLength !== undefined ? Math.min(60, Math.max(15, data.cycleLength)) : CYCLE_RANGE.default;
+  const current = data.cycleLength ?? (manual ? 75 : CYCLE_RANGE.default);
+  const feedback = getCycleFeedback(current);
+
+  const belowSliderMax = data.cycleLength !== undefined && data.cycleLength <= 60;
 
   return (
     <div>
@@ -35,7 +40,6 @@ export function StepCycleLength({ data, update, errors }: StepProps) {
             onSelect={() =>
               update({
                 cycleLengthOption: o.value,
-                // Seed the slider with a sensible starting point the first time.
                 ...(o.value === "known" && data.cycleLength === undefined ? { cycleLength: CYCLE_RANGE.default } : {}),
               })
             }
@@ -50,13 +54,65 @@ export function StepCycleLength({ data, update, errors }: StepProps) {
             <SliderInput
               id="cycle-length"
               label="Usual cycle length"
-              value={length}
-              min={CYCLE_RANGE.min}
-              max={CYCLE_RANGE.max}
+              value={manual ? 60 : sliderValue}
+              displayValue={current}
+              min={15}
+              max={60}
               ticks={[15, 21, 28, 35, 45, 60]}
-              onChange={(cycleLength) => update({ cycleLength })}
+              disabled={manual}
+              onChange={(cycleLength) => {
+                setManual(false);
+                update({ cycleLength });
+              }}
               aside={<FeedbackBadge tone={feedback.tone} label={feedback.label} />}
-            />
+            >
+              <div className="mt-2 animate-expand border-t border-line pt-2.5">
+                {!manual ? (
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-body-sm font-medium text-ink-soft">Cycle longer than 60 days?</p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManual(true);
+                        if (!data.cycleLength || data.cycleLength <= 60) {
+                          update({ cycleLength: 75 });
+                        }
+                      }}
+                      className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 pointer-fine:min-h-9 text-body-sm font-semibold text-rose-ink transition-colors duration-200 hover:bg-hover-bg focus-ring"
+                    >
+                      Enter manually
+                      <ArrowRight className="size-3.5" aria-hidden="true" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="animate-expand">
+                    <NumberField
+                      id="manual-cycle-length"
+                      label="Enter exact cycle length"
+                      value={data.cycleLength}
+                      onChange={(cycleLength) => update({ cycleLength })}
+                      placeholder="e.g. 75"
+                      unit="days"
+                      hint={belowSliderMax ? "For 60 days or fewer, you can use the slider above." : "Use a whole number of days."}
+                      error={errors.cycleLength}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManual(false);
+                        if (data.cycleLength && data.cycleLength > 60) {
+                          update({ cycleLength: 60 });
+                        }
+                      }}
+                      className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 pointer-fine:min-h-9 text-body-sm font-semibold text-rose-ink transition-colors duration-200 hover:bg-hover-bg focus-ring"
+                    >
+                      <ArrowLeft className="size-3.5" aria-hidden="true" />
+                      Use slider instead
+                    </button>
+                  </div>
+                )}
+              </div>
+            </SliderInput>
             <FieldError message={errors.cycleLength} />
             <InfoCard>
               Cycle length naturally varies. If yours is consistently outside the typical range, consider

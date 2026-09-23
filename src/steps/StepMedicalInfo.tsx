@@ -7,20 +7,26 @@ import { MEDICAL_CONDITIONS } from "../constants";
 import { cn } from "../lib/cn";
 import type { StepProps } from "../types";
 
-/** Stable identities for the editable medication rows, so removing one never re-keys the others. */
-let medicationRowSeq = 0;
-const newRowId = () => ++medicationRowSeq;
-
 export function StepMedicalInfo({ data, update, errors }: StepProps) {
-  const [rowIds, setRowIds] = useState<number[]>(() => data.medications.map(newRowId));
+  const [rowIds, setRowIds] = useState<string[]>(() =>
+    data.medications.map(() => Math.random().toString(36).slice(2, 9)),
+  );
+
   const toggleCondition = (c: string) => {
     const has = data.medicalConditions.includes(c);
     if (c === "None") {
-      update({ medicalConditions: has ? [] : ["None"] });
+      update({
+        medicalConditions: has ? [] : ["None"],
+        otherMedicalCondition: "",
+      });
       return;
     }
     const withoutNone = data.medicalConditions.filter((x) => x !== "None");
-    update({ medicalConditions: has ? withoutNone.filter((x) => x !== c) : [...withoutNone, c] });
+    const nextConditions = has ? withoutNone.filter((x) => x !== c) : [...withoutNone, c];
+    update({
+      medicalConditions: nextConditions,
+      ...(has && c === "Other" ? { otherMedicalCondition: "" } : {}),
+    });
   };
 
   const setMedication = (i: number, value: string) => {
@@ -32,16 +38,31 @@ export function StepMedicalInfo({ data, update, errors }: StepProps) {
   const removeMedication = (i: number) => {
     const next = data.medications.filter((_, idx) => idx !== i);
     const ids = rowIds.filter((_, idx) => idx !== i);
-    update({ medications: next.length ? next : [""] });
-    setRowIds(next.length ? ids : [newRowId()]);
+    const finalNext = next.length ? next : [""];
+    const finalIds = next.length ? ids : [Math.random().toString(36).slice(2, 9)];
+    update({ medications: finalNext });
+    setRowIds(finalIds);
     // The pressed button is gone — keep keyboard users in the list instead of dropping focus to <body>.
     requestAnimationFrame(() => document.getElementById(`med-${Math.max(0, i - 1)}`)?.focus());
   };
 
   const addMedication = () => {
     update({ medications: [...data.medications, ""] });
-    setRowIds((ids) => [...ids, newRowId()]);
+    setRowIds((ids) => [...ids, Math.random().toString(36).slice(2, 9)]);
     requestAnimationFrame(() => document.getElementById(`med-${data.medications.length}`)?.focus());
+  };
+
+  const handleTakingMedication = (taking: boolean) => {
+    if (taking === data.takingMedication) return;
+    if (taking) {
+      const initialMeds = data.medications.length ? data.medications : [""];
+      update({ takingMedication: true, medications: initialMeds });
+      if (!rowIds.length) {
+        setRowIds([Math.random().toString(36).slice(2, 9)]);
+      }
+    } else {
+      update({ takingMedication: false, medications: [] });
+    }
   };
 
   return (
@@ -98,7 +119,7 @@ export function StepMedicalInfo({ data, update, errors }: StepProps) {
                 role="radio"
                 aria-checked={on}
                 tabIndex={data.takingMedication === null || on ? 0 : -1}
-                onClick={() => update({ takingMedication: o.value })}
+                onClick={() => handleTakingMedication(o.value)}
                 className={cn(
                   "min-h-11 rounded-[10px] text-body-sm font-semibold transition-[background-color,color,box-shadow] duration-200 focus-ring pointer-fine:min-h-9",
                   on ? "bg-white text-rose-ink shadow-[0_1px_4px_rgb(40_20_30/0.06)] ring-1 ring-select-border" : "text-ink-soft hover:bg-hover-bg",

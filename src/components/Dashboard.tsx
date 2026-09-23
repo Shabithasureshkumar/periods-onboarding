@@ -9,7 +9,8 @@ import { secondaryBtn } from "./NavigationButtons";
 import { GirlCharacter } from "./visuals/GirlCharacter";
 
 const DAY = 86_400_000;
-const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const fmt = (d: Date) => `${MONTHS_SHORT[d.getUTCMonth()]} ${d.getUTCDate()}`;
 
 interface CycleSnapshot {
   cycleDay: number;
@@ -27,9 +28,9 @@ function snapshot(data: OnboardingData): CycleSnapshot | undefined {
   if (!last) return undefined;
   const estimated = !(data.cycleLengthOption === "known" && data.cycleLength);
   const cycleLength = data.cycleLength && !estimated ? data.cycleLength : 28;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const since = Math.max(0, Math.round((today.getTime() - last.getTime()) / DAY));
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const since = Math.max(0, Math.round((todayUtc - last.getTime()) / DAY));
   const cyclesPassed = Math.floor(since / cycleLength);
   const nextPeriod = new Date(last.getTime() + (cyclesPassed + 1) * cycleLength * DAY);
   const ovulation = new Date(nextPeriod.getTime() - 14 * DAY);
@@ -38,7 +39,7 @@ function snapshot(data: OnboardingData): CycleSnapshot | undefined {
     cycleLength,
     estimated,
     nextPeriod,
-    daysUntil: Math.round((nextPeriod.getTime() - today.getTime()) / DAY),
+    daysUntil: Math.round((nextPeriod.getTime() - todayUtc) / DAY),
     fertileStart: new Date(ovulation.getTime() - 5 * DAY),
     fertileEnd: new Date(ovulation.getTime() + DAY),
   };

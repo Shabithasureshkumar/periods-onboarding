@@ -21,9 +21,9 @@ export function validateStep(step: StepId, data: OnboardingData): StepErrors {
       if (!date) {
         e.lastPeriod = "Please choose the first day of your last period.";
       } else {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (date > today) e.lastPeriod = "The date can't be in the future.";
+        const now = new Date();
+        const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+        if (date.getTime() > todayUtc) e.lastPeriod = "The date can't be in the future.";
       }
       if (data.age !== undefined && !inRange(data.age, AGE_RANGE.min, AGE_RANGE.max)) {
         e.age = `Age should be between ${AGE_RANGE.min} and ${AGE_RANGE.max}.`;
@@ -32,11 +32,14 @@ export function validateStep(step: StepId, data: OnboardingData): StepErrors {
     }
     case 2:
       if (!data.cycleLengthOption) e.cycleLengthOption = "Please choose the option that fits you best.";
-      if (
-        data.cycleLengthOption === "known" &&
-        !inRange(data.cycleLength, CYCLE_RANGE.min, CYCLE_RANGE.max)
-      ) {
-        e.cycleLength = "Please set your usual cycle length.";
+      if (data.cycleLengthOption === "known") {
+        if (data.cycleLength === undefined || data.cycleLength === null || isNaN(data.cycleLength)) {
+          e.cycleLength = "Please enter your usual cycle length.";
+        } else if (!Number.isInteger(data.cycleLength) || data.cycleLength < CYCLE_RANGE.min) {
+          e.cycleLength = `Cycle length must be at least ${CYCLE_RANGE.min} days.`;
+        } else if (data.cycleLength > CYCLE_RANGE.max) {
+          e.cycleLength = `Cycle length cannot exceed ${CYCLE_RANGE.max} days.`;
+        }
       }
       break;
     case 3:

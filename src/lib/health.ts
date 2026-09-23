@@ -93,31 +93,48 @@ export const BMI_CATEGORY_NOTES: Record<BmiCategory, string> = {
   Obesity: "Well above the general reference range of 18.5–24.9.",
 };
 
-/** Parse "YYYY-MM-DD" as a local date (avoids UTC off-by-one). */
+/** Parse "YYYY-MM-DD" safely into a UTC Date object (eliminates timezone and DST shift bugs). */
 export function parseISODate(iso: string): Date | undefined {
+  if (!iso) return undefined;
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!m) return undefined;
-  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+  // Verify day is valid for the given month and year (including leap years)
+  const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  if (day > maxDay) return undefined;
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 export function toISODate(d: Date): string {
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${mm}-${dd}`;
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${mm}-${dd}`;
+}
+
+export function todayISO(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function formatLongDate(iso: string): string {
   const d = parseISODate(iso);
   if (!d) return "";
-  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  return `${months[d.getUTCMonth()]} ${d.getUTCDate()}, ${d.getUTCFullYear()}`;
 }
 
 export function daysAgo(iso: string): number | undefined {
   const d = parseISODate(iso);
   if (!d) return undefined;
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.round((today.getTime() - d.getTime()) / 86_400_000);
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.round((todayUtc - d.getTime()) / 86_400_000);
 }
 
 export function pluralDays(n: number): string {

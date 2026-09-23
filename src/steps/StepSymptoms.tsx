@@ -13,8 +13,19 @@ export function resolvedList(items: string[], custom: string): string[] {
 export function StepSymptoms({ data, update, errors }: StepProps) {
   const toggle = (key: "symptoms" | "moods", value: string) => {
     const list = data[key];
-    const next = list.includes(value) ? list.filter((x) => x !== value) : [...list, value];
-    update(key === "symptoms" ? { symptoms: next } : { moods: next });
+    const isRemoving = list.includes(value);
+    const next = isRemoving ? list.filter((x) => x !== value) : [...list, value];
+    if (key === "symptoms") {
+      update({
+        symptoms: next,
+        ...(isRemoving && value === "Other" ? { customSymptom: "" } : {}),
+      });
+    } else {
+      update({
+        moods: next,
+        ...(isRemoving && value === "Other" ? { customMood: "" } : {}),
+      });
+    }
   };
 
   const tracked = [...resolvedList(data.symptoms, data.customSymptom), ...resolvedList(data.moods, data.customMood)];

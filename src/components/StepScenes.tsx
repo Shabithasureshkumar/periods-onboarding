@@ -296,7 +296,7 @@ export function LastPeriodScene({ iso }: { iso: string }) {
 /* Step 2 — Cycle length                                               */
 /* ------------------------------------------------------------------ */
 export function CycleLengthScene({ cycle, label, known }: { cycle: number; label: string; known: boolean }) {
-  const markerPct = ((cycle - 15) / 45) * 100;
+  const markerPct = Math.min(100, Math.max(0, ((cycle - 15) / 45) * 100));
   const shown = Math.round(useCountUp(cycle, 400));
 
   return (

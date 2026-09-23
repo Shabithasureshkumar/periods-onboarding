@@ -29,6 +29,7 @@ const MIN_STRIP = 100;
 
 interface OnboardingFlowProps {
   onComplete: (data: OnboardingData) => void;
+  onStepChange?: (step: StepId, data: OnboardingData) => void;
   /** Resume an existing setup (e.g. "Edit setup" from the dashboard, or saved progress). */
   initialData?: OnboardingData;
   initialStep?: StepId;
@@ -73,7 +74,7 @@ function FormStep({ step, onEdit, ...props }: StepProps & { step: StepId; onEdit
   }
 }
 
-export function OnboardingFlow({ onComplete, initialData = INITIAL_DATA, initialStep = 1, initialCompleted = [] }: OnboardingFlowProps) {
+export function OnboardingFlow({ onComplete, onStepChange, initialData = INITIAL_DATA, initialStep = 1, initialCompleted = [] }: OnboardingFlowProps) {
   const [data, setData] = useState<OnboardingData>(initialData);
   const [step, setStep] = useState<StepId>(initialStep);
   const [maxReached, setMaxReached] = useState<StepId>(initialStep);
@@ -110,10 +111,11 @@ export function OnboardingFlow({ onComplete, initialData = INITIAL_DATA, initial
       setDirection(target >= step ? "forward" : "back");
       setStep(target);
       setMaxReached((m) => (target > m ? target : m));
+      onStepChange?.(target, data);
       // The page never scrolls; only reset the question card in case it had to scroll internally.
       formScrollRef.current?.scrollTo({ top: 0 });
     },
-    [step],
+    [step, data, onStepChange],
   );
 
   const markAttempted = (s: StepId) => setAttempted((prev) => new Set(prev).add(s));

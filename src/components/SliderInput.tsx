@@ -21,14 +21,26 @@ interface SliderInputProps {
 }
 
 /** Large-value slider with pink→peach filled track. */
-export function SliderInput({ id, label, value, min, max, onChange, aside, ticks, disabled, displayValue, children }: SliderInputProps) {
+export function SliderInput({
+  id,
+  label,
+  value,
+  min,
+  max,
+  onChange,
+  aside,
+  ticks,
+  disabled,
+  displayValue,
+  children,
+}: SliderInputProps) {
   const pct = ((value - min) / (max - min)) * 100;
   const shown = useCountUp(displayValue ?? value, 250);
   // CSS custom property consumed by the .range-rose track gradient.
   const fillStyle: CSSProperties & { "--fill": string } = { "--fill": `${pct}%` };
 
   return (
-    <div className={cn("rounded-card border border-blush-300 bg-white px-4 pb-2 pt-3.5", disabled && "opacity-50")}>
+    <div className={cn("rounded-card border border-blush-300 bg-white px-4 pb-2 pt-3.5", disabled && "opacity-80")}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <label htmlFor={id} className="text-body-sm font-semibold text-ink-label">

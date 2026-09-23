@@ -1,7 +1,7 @@
 import { CalendarDays, ChevronDown, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CalendarDialog } from "../components/CalendarDialog";
-import { DateWheel } from "../components/DateWheel";
+import { ManualDateInput } from "../components/ManualDateInput";
 import { FieldError, NumberField, TextField } from "../components/Fields";
 import { StepHeader } from "../components/StepHeader";
 import { cn } from "../lib/cn";
@@ -25,12 +25,16 @@ export function StepLastPeriod({ data, update, errors }: StepProps) {
         subtitle="Choose the first day of your most recent period to help us understand your cycle."
       />
 
-      {/* 1. Interactive date wheel + calendar shortcut */}
+      {/* 1. Manual date entry + calendar / today shortcuts */}
       <div>
-        <DateWheel value={data.lastPeriod} onChange={(lastPeriod) => update({ lastPeriod })} />
-        <p className="mt-1 text-center text-caption text-ink-muted">Scroll to select your date</p>
+        <ManualDateInput
+          value={data.lastPeriod}
+          onChange={(lastPeriod) => update({ lastPeriod })}
+          error={errors.lastPeriod}
+          errorId="lastPeriod-error"
+        />
 
-        <div className="mt-2 flex items-stretch gap-2">
+        <div className="mt-2.5 flex items-stretch gap-2">
           <button
             type="button"
             onClick={() => setCalendarOpen(true)}
@@ -50,7 +54,7 @@ export function StepLastPeriod({ data, update, errors }: StepProps) {
           <button
             type="button"
             onClick={() => update({ lastPeriod: toISODate(new Date()) })}
-            className="shrink-0 rounded-[16px] border border-[#F2DDE7] bg-white px-3 text-body-sm font-semibold text-rose-ink transition-colors duration-200 hover:border-hover-border hover:bg-hover-bg focus-ring"
+            className="shrink-0 rounded-[16px] border border-[#F2DDE7] bg-white px-4 text-body-sm font-semibold text-rose-ink transition-colors duration-200 hover:border-hover-border hover:bg-hover-bg focus-ring"
           >
             Today
           </button>
