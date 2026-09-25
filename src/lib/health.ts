@@ -14,7 +14,7 @@ export function getCycleFeedback(days: number): Feedback {
 }
 
 export function getDurationFeedback(days: number): Feedback {
-  if (days <= 2) {
+  if (days <= 1) {
     return {
       tone: "short",
       label: "Shorter than the typical range",
@@ -26,7 +26,7 @@ export function getDurationFeedback(days: number): Feedback {
     return {
       tone: "typical",
       label: "Within the typical range",
-      message: "Many periods last around 3–7 days, though your personal pattern may be different.",
+      message: "Many periods last around 2–7 days, though your personal pattern may be different.",
     };
   }
   return {

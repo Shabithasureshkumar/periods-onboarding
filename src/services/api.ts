@@ -27,6 +27,33 @@ class ApiService {
     this.baseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/+$/, "");
   }
 
+  getBaseUrl(): string {
+    return this.baseUrl;
+  }
+
+  /**
+   * Check backend server liveness and health status.
+   */
+  async checkHealth(): Promise<{ status: string; message: string } | null> {
+    const targetUrl = this.baseUrl || "http://localhost:5000";
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await fetch(`${targetUrl}/api/health`, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+      if (response.ok) {
+        return (await response.json()) as { status: string; message: string };
+      }
+      return null;
+    } catch {
+      clearTimeout(timeoutId);
+      return null;
+    }
+  }
+
   /**
    * Submit complete onboarding profile payload to Mednevo backend.
    */
